@@ -100,4 +100,42 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = value;
     notifyListeners();
   }
+
+  Future<bool> register({
+    required String username,
+    required String email,
+    required String password,
+    required String passwordConfirm,
+  }) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      final response = await _apiClient.post(
+        '/auth/register/',
+        body: {
+          'username': username,
+          'email': email,
+          'password': password,
+          'password_confirm': passwordConfirm,
+        },
+        authenticated: false,
+      );
+
+      if (response.statusCode == 201) {
+        // Await the future to ensure local try-catch boundary is respected
+        return await login(username, password);
+      }
+
+      _errorMessage = _extractErrorMessage(response);
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      // Secure logging for ADB wireless debugging, ignored in release builds
+      debugPrint('[Auth Error - Register]: $e');
+      _errorMessage = 'Network error. Please check your connection and try again.';
+      _setLoading(false);
+      return false;
+    }
+  }
 }
